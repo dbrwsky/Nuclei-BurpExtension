@@ -15,9 +15,11 @@ Simple extension that allows to run nuclei scanner directly from burp and transf
 
 Specify the URL in target field or choose one from the burp history and just Run Scanning.
 
-![sendURLtoExtension](img/sendURLtoExtension.PNG "sendURLtoExtension")
+![sendURLtoExtension](img/sendURLtoExtension.png "sendURLtoExtension")
 
 Nuclei templates with the network tag should be disabled for the extension to work properly. 
+
+
 
 # Results
 
