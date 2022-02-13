@@ -181,13 +181,13 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         self.scanResultsTab.add(tabActionPanel, BorderLayout.PAGE_START)
         self.tabPane.addTab(title,self.scanResultsTab)
         
-        cmd = self.nucleiPathField.text + " -u " + url + " -t " + self.nucleiTemplatesPathField.text + " -json -nc " + self.nucleiCustomArgsField.text
+        cmd = "'" + self.nucleiPathField.text + "' -u " + url + " -t '" + self.nucleiTemplatesPathField.text + "' -json -nc " + self.nucleiCustomArgsField.text
         
         text += "Scanning of " + url + " started<br>" + cmd + "<br>"
         text += "-----------------------------------------------------------<br>"
         scanResultsTextPane.setText(text)
 
-        parsedCmd = shlex.split(cmd, posix=False)
+        parsedCmd = shlex.split(cmd, posix=True)
         p = subprocess.Popen(parsedCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         
         scanStatusLabel.setText("Scan in progress")
