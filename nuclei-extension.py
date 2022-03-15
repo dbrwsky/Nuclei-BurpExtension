@@ -272,21 +272,20 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 
     def getFile(self, button):
         chooser = JFileChooser()
-        if chooser is not None:
-            if button.getSource() == self.nucleiPathButton:
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
-                chooser.showOpenDialog(self.parentFrame)
+        if button.getSource() == self.nucleiPathButton:
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
+            returnVal = chooser.showOpenDialog(self.parentFrame)
+            if returnVal != chooser.CANCEL_OPTION:
                 if (chooser.currentDirectory and chooser.selectedFile.name) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
                     self.nucleiPathField.setText(self._fileLocation)
-            if button.getSource() == self.nucleiTemplatesPathButton:
-                chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES)
-                chooser.showOpenDialog(self.parentFrame)
+        if button.getSource() == self.nucleiTemplatesPathButton:
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES)
+            returnVal = chooser.showOpenDialog(self.parentFrame)
+            if returnVal != chooser.CANCEL_OPTION:
                 if (chooser.currentDirectory) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
-                    self.nucleiTemplatesPathField.setText(self._fileLocation)    
-        else:
-            self.nucleiPathField.setText("File Not Valid, Try Again")
+                    self.nucleiTemplatesPathField.setText(self._fileLocation)  
                 
 class ScannerMenu(IContextMenuFactory):
     def __init__(self, scannerInstance):
