@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     print (e)
     
-VERSION = '0.1a'
+VERSION = '0.2'
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -32,6 +32,35 @@ sys.setdefaultencoding('utf-8')
 class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
     
     def __init__(self):
+        self.cfgNucleiPath = ''
+        self.cfgTemplatesPath = ''
+        self.cfgCustomArgs = '-etags network'
+        self.tabNo = 0
+
+
+    def registerExtenderCallbacks(self, callbacks):
+        print("Loading...")
+        self._helpers = callbacks.getHelpers()
+        self._callbacks = callbacks
+        self._callbacks.setExtensionName("Nuclei")
+        self._callbacks.registerExtensionStateListener(self)       
+        
+        self.scannerMenu = ScannerMenu(self)
+        self._callbacks.registerContextMenuFactory(self.scannerMenu)
+        
+        self._callbacks.addSuiteTab(self)
+        self.isBurpPro = True if "Professional" in self._callbacks.getBurpVersion()[0] else False
+        
+        self.runningSubprocesses = set()
+        print("Extension loaded")
+
+    def getTabCaption(self):
+        return "Nuclei"
+
+    def getUiComponent(self):
+        self.cfgNucleiPath = self._callbacks.loadExtensionSetting("nucleiPath")
+        self.cfgTemplatesPath = self._callbacks.loadExtensionSetting("templatesPath")
+        self.cfgCustomArgs = self._callbacks.loadExtensionSetting("customArgs")
         
         self.mainPanel = JPanel(BorderLayout(5,5))
         self.mainPanel.setBorder(EmptyBorder(20, 20, 20, 20))
@@ -56,7 +85,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.nucleiPathPanel = JPanel()
         self.nucleiPathPanel.layout = BoxLayout(self.nucleiPathPanel,BoxLayout.X_AXIS)
-        self.nucleiPathField = JTextField('',30)
+        self.nucleiPathField = JTextField('' + self.cfgNucleiPath,30)
         self.nucleiPathButton = JButton('Browse...',actionPerformed=self.getFile)
         self.nucleiPathPanel.add(self.nucleiPathField)
         self.nucleiPathPanel.add(self.nucleiPathButton)
@@ -68,7 +97,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.nucleiTemplatesPathPanel = JPanel()
         self.nucleiTemplatesPathPanel.layout = BoxLayout(self.nucleiTemplatesPathPanel,BoxLayout.X_AXIS)
-        self.nucleiTemplatesPathField = JTextField('',30)
+        self.nucleiTemplatesPathField = JTextField('' + self.cfgTemplatesPath ,30)
         self.nucleiTemplatesPathButton = JButton('Browse...',actionPerformed=self.getFile)
         self.nucleiTemplatesPathPanel.add(self.nucleiTemplatesPathField)
         self.nucleiTemplatesPathPanel.add(self.nucleiTemplatesPathButton)
@@ -76,7 +105,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.configPanel.add(Box.createRigidArea(Dimension(0, 10)))
         self.configPanel.add(JLabel("Custom nuclei arguments:", SwingConstants.LEFT), BorderLayout.LINE_START)
-        self.nucleiCustomArgsField = JTextField('-etags network',30) #-etags fuzz,network -duc -ni -rl 10 -c 5 -proxy http://127.0.0.1:8080
+        self.nucleiCustomArgsField = JTextField('' + self.cfgCustomArgs,30) #-etags fuzz,network -duc -ni -rl 10 -c 5 -proxy http://127.0.0.1:8080
         self.configPanel.add(self.nucleiCustomArgsField)
         self.configPanel.add(Box.createRigidArea(Dimension(0, 10)))
         
@@ -99,37 +128,19 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         for frame in self.Frames:
             if frame.getName() == "suiteFrame" and  "Burp Suite" in frame.getTitle():
                 self.parentFrame = frame
-            
-        self.tabNo = 0
-
-
-    def registerExtenderCallbacks(self, callbacks):
-        print("Loading...")
-        self._helpers = callbacks.getHelpers()
-        self._callbacks = callbacks
-        self._callbacks.setExtensionName("Nuclei")
-        self._callbacks.customizeUiComponent(self.mainPanel)
-        self._callbacks.registerExtensionStateListener(self)
         
-        self.scannerMenu = ScannerMenu(self)
-        self._callbacks.registerContextMenuFactory(self.scannerMenu)
-        
-        self._callbacks.addSuiteTab(self)
-        self.isBurpPro = True if "Professional" in self._callbacks.getBurpVersion()[0] else False
-        
-        self.runningSubprocesses = set()
-        print("Extension loaded")
-
-    def getTabCaption(self):
-        return "Nuclei"
-
-    def getUiComponent(self):
         return self.mainPanel
+    
+    def saveConfig(self):
+        self._callbacks.saveExtensionSetting("nucleiPath",str(self.nucleiPathField.text))
+        self._callbacks.saveExtensionSetting("templatesPath",str(self.nucleiTemplatesPathField.text))
+        self._callbacks.saveExtensionSetting("customArgs",str(self.nucleiCustomArgsField.text))
 
     def extensionUnloaded(self):
         for p in self.runningSubprocesses:
             p.terminate()
             self.runningSubprocesses.remove(p)
+        self.saveConfig()
         print("Extension was unloaded")
         
     def startScan(self, ev):
@@ -296,13 +307,15 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 if (chooser.currentDirectory and chooser.selectedFile.name) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
                     self.nucleiPathField.setText(self._fileLocation)
+                    self.saveConfig()
         if button.getSource() == self.nucleiTemplatesPathButton:
             chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES)
             returnVal = chooser.showOpenDialog(self.parentFrame)
             if returnVal != chooser.CANCEL_OPTION:
                 if (chooser.currentDirectory) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
-                    self.nucleiTemplatesPathField.setText(self._fileLocation)  
+                    self.nucleiTemplatesPathField.setText(self._fileLocation)
+                    self.saveConfig()  
                 
 class ScannerMenu(IContextMenuFactory):
     def __init__(self, scannerInstance):
