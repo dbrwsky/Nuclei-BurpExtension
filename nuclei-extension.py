@@ -166,18 +166,21 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         self.scanResultsTab.add(JScrollPane(scanResultsTextPane), BorderLayout.CENTER)
         
         tabActionPanel = JPanel(FlowLayout(FlowLayout.LEADING, 10, 10))
+        
         tabActionPanel.add(JLabel("Status: ", SwingConstants.LEFT))
         scanStatusLabel = JLabel("Ready to scan", SwingConstants.LEFT)
         tabActionPanel.add(scanStatusLabel)
+        
         tabCloseButton = JButton("Close tab",actionPerformed=self.closeTab)
         tabCloseButton.setForeground(Color.RED)
         tabActionPanel.add(tabCloseButton, BorderLayout.LINE_START)
+        
         killProcessButton = JButton("Kill nuclei process",actionPerformed=self.killNuclei)
         killProcessButton.setForeground(Color.RED)
         tabActionPanel.add(killProcessButton, BorderLayout.LINE_START)
         
+
         title = '['+ str (self.tabNo) +'] ' + url
-        
         self.scanResultsTab.add(tabActionPanel, BorderLayout.PAGE_START)
         self.tabPane.addTab(title,self.scanResultsTab)
         
@@ -187,22 +190,34 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         text += "-----------------------------------------------------------<br>"
         scanResultsTextPane.setText(text)
 
+        
         parsedCmd = shlex.split(cmd, posix=True)
-        p = subprocess.Popen(parsedCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        scanStatusLabel.setText("Scan in progress")
-        
-        self.runningSubprocesses.add(p)
-        killProcessButton.putClientProperty("proc", p)
-        tabCloseButton.putClientProperty("proc", p)        
-        
-        (output, err) = p.communicate()
-        text += self.parseNucleiResults(output, httpService)
-        scanResultsTextPane.setText(text)
+        try:
+            p = subprocess.Popen(parsedCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            scanStatusLabel.setText("Scan in progress")
+            
+            self.runningSubprocesses.add(p)
 
+            killProcessButton.putClientProperty("pid", p.pid)
+            killProcessButton.putClientProperty("proc", p)
+            
+            tabCloseButton.putClientProperty("pid", p.pid)
+            tabCloseButton.putClientProperty("proc", p)
+             
+            (output, err) = p.communicate()
+            text += self.parseNucleiResults(output, httpService)
+            
+            scanResultsTextPane.setText(text)
+            scanStatusLabel.setText("Scan completed")
+            self.runningSubprocesses.remove(p)
+            
+        except Exception as e:
+            text += "<p style=\"color:red\"><b> EXCEPTION OCCURED: " + str(e) + "</b></p>"
+            scanStatusLabel.setText("ERROR")
+            scanResultsTextPane.setText(text)
+        
         killProcessButton.setEnabled(False)
-        scanStatusLabel.setText("Scan completed")
-        self.runningSubprocesses.remove(p)
 
     
     def parseNucleiResults(self, results, httpService):
@@ -255,11 +270,13 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
 
     def closeTab(self, button):
+        pid = button.getSource().getClientProperty("pid")
         proc = button.getSource().getClientProperty("proc")
-        poll = proc.poll()
-        if poll is None:
-            proc.terminate()
-        
+        if proc and pid:
+            poll = proc.poll()
+            if poll is None:
+                proc.terminate()
+                
         tabid = self.tabPane.getSelectedIndex()
         self.tabPane.removeTabAt(tabid)
         if self.tabPane.getTabCount() == 1:
