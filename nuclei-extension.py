@@ -225,7 +225,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                     findingDesc += finding["curl-command"] 
                 findingURL = URL(finding["matched-at"])
                 findingSeverity = "Information"
-                if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower == "critical":
+                if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower() == "critical":
                     findingSeverity = "High"
                 elif (finding["info"]["severity"]).lower() == "medium":
                     findingSeverity = "Medium"
