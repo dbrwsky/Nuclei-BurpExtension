@@ -33,5 +33,4 @@ The results are also available in the extension tab.
 
 # TO DO
 
-- [ ] Ability to save extension config
-
+- [x] Ability to save extension config
