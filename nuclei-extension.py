@@ -34,7 +34,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
     def __init__(self):
         self.cfgNucleiPath = ''
         self.cfgTemplatesPath = ''
-        self.cfgCustomArgs = '-etags network'
+        self.cfgCustomArgs = ''
         self.tabNo = 0
 
 
@@ -58,9 +58,9 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         return "Nuclei"
 
     def getUiComponent(self):
-        self.cfgNucleiPath = self._callbacks.loadExtensionSetting("nucleiPath")
-        self.cfgTemplatesPath = self._callbacks.loadExtensionSetting("templatesPath")
-        self.cfgCustomArgs = self._callbacks.loadExtensionSetting("customArgs")
+        self.cfgNucleiPath = str(self._callbacks.loadExtensionSetting("nucleiPath"))
+        self.cfgTemplatesPath = str(self._callbacks.loadExtensionSetting("templatesPath"))
+        self.cfgCustomArgs = str(self._callbacks.loadExtensionSetting("customArgs"))
         
         self.mainPanel = JPanel(BorderLayout(5,5))
         self.mainPanel.setBorder(EmptyBorder(20, 20, 20, 20))
