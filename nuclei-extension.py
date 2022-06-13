@@ -216,10 +216,11 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
             tabCloseButton.putClientProperty("pid", p.pid)
             tabCloseButton.putClientProperty("proc", p)
              
-            (output, err) = p.communicate()
-            text += self.parseNucleiResults(output, httpService)
-            
-            scanResultsTextPane.setText(text)
+            for line in iter(p.stdout.readline, b''):
+                vuln = line.rstrip()
+                text += self.parseNucleiResults(vuln, httpService)
+                scanResultsTextPane.setText(text)
+
             scanStatusLabel.setText("Scan completed")
             self.runningSubprocesses.remove(p)
             
