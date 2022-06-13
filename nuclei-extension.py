@@ -240,7 +240,6 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 finding = json.loads(issue)
                 findingName = "[Nuclei] " + finding["info"]["name"]
                 findingDesc = "<b>Template ID:</b> " + finding["template-id"] + "<br>"
-                findingDesc += "<b>Template:</b> " + finding["template"] + "<br>"
                 if "matcher-name" in finding:
                     findingName += " : " + finding["matcher-name"]
                 findingDesc += "<b>Matched-at:</b> "+ finding["matched-at"] + "<br>"
