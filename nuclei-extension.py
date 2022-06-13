@@ -239,17 +239,19 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
             try:
                 finding = json.loads(issue)
                 findingName = "[Nuclei] " + finding["info"]["name"]
+                findingDesc = "<b>Template ID:</b> " + finding["template-id"] + "<br>"
+                findingDesc += "<b>Template:</b> " + finding["template"] + "<br>"
                 if "matcher-name" in finding:
                     findingName += " : " + finding["matcher-name"]
-                findingDesc = finding["matched-at"] + "<br>"
+                findingDesc += "<b>Matched-at:</b> "+ finding["matched-at"] + "<br>"
                 if "extracted-results" in finding:
                     for item in finding["extracted-results"]:
                         findingName += ": " + item
-                        findingDesc += "Extracted data: " + item + "<br>"
+                        findingDesc += "<b>Extracted data:</b> " + item + "<br>"
                 if "description" in finding["info"]:
-                    findingDesc += finding["info"]["description"] + "<br>"
+                    findingDesc += "<b>Description:</b> <br>" + finding["info"]["description"] + "<br>"
                 if "curl-command" in finding:
-                    findingDesc += finding["curl-command"] 
+                    findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"] 
                 findingURL = URL(finding["matched-at"])
                 findingSeverity = "Information"
                 if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower() == "critical":
@@ -262,7 +264,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                     findingReq = finding["request"]
                 if "response" in finding:
                     findingResp = finding["response"]
-                text += '<b>[' + findingSeverity + '] ' + findingName + '<br>Description:</b><br> ' + findingDesc + '<br>-----------<br>'
+                text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
                 if self.isBurpPro:
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
