@@ -249,6 +249,10 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                         findingDesc += "<b>Extracted data:</b> " + item + "<br>"
                 if "description" in finding["info"]:
                     findingDesc += "<b>Description:</b> <br>" + finding["info"]["description"] + "<br>"
+                if finding["info"]["reference"]:
+                    findingDesc += "<b>References:</b><br> "
+                    for item in finding["info"]["reference"]:
+                        findingDesc += item + "<br>"  
                 if "curl-command" in finding:
                     findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"] 
                 findingURL = URL(finding["matched-at"])
