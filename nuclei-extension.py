@@ -254,8 +254,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                     for item in finding["info"]["reference"]:
                         findingDesc += item + "<br>"  
                 if "curl-command" in finding:
-                    findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"] 
-                findingURL = URL(finding["matched-at"])
+                    findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"]
                 findingSeverity = "Information"
                 if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower() == "critical":
                     findingSeverity = "High"
@@ -263,12 +262,9 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                     findingSeverity = "Medium"
                 elif (finding["info"]["severity"]).lower() == "low" :
                     findingSeverity = "Low"
-                if "request" in finding:
-                    findingReq = finding["request"]
-                if "response" in finding:
-                    findingResp = finding["response"]
                 text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
-                if self.isBurpPro:
+                if self.isBurpPro and finding["type"] == "http":
+                    findingURL = URL(finding["matched-at"])
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
             except Exception as e:
