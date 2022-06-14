@@ -239,18 +239,22 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
             try:
                 finding = json.loads(issue)
                 findingName = "[Nuclei] " + finding["info"]["name"]
+                findingDesc = "<b>Template ID:</b> " + finding["template-id"] + "<br>"
                 if "matcher-name" in finding:
                     findingName += " : " + finding["matcher-name"]
-                findingDesc = finding["matched-at"] + "<br>"
+                findingDesc += "<b>Matched-at:</b> "+ finding["matched-at"] + "<br>"
                 if "extracted-results" in finding:
                     for item in finding["extracted-results"]:
                         findingName += ": " + item
-                        findingDesc += "Extracted data: " + item + "<br>"
+                        findingDesc += "<b>Extracted data:</b> " + item + "<br>"
                 if "description" in finding["info"]:
-                    findingDesc += finding["info"]["description"] + "<br>"
+                    findingDesc += "<b>Description:</b> <br>" + finding["info"]["description"] + "<br>"
+                if finding["info"]["reference"]:
+                    findingDesc += "<b>References:</b><br> "
+                    for item in finding["info"]["reference"]:
+                        findingDesc += item + "<br>"  
                 if "curl-command" in finding:
-                    findingDesc += finding["curl-command"] 
-                findingURL = URL(finding["matched-at"])
+                    findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"]
                 findingSeverity = "Information"
                 if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower() == "critical":
                     findingSeverity = "High"
@@ -258,12 +262,9 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                     findingSeverity = "Medium"
                 elif (finding["info"]["severity"]).lower() == "low" :
                     findingSeverity = "Low"
-                if "request" in finding:
-                    findingReq = finding["request"]
-                if "response" in finding:
-                    findingResp = finding["response"]
-                text += '<b>[' + findingSeverity + '] ' + findingName + '<br>Description:</b><br> ' + findingDesc + '<br>-----------<br>'
-                if self.isBurpPro:
+                text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
+                if self.isBurpPro and finding["type"] == "http":
+                    findingURL = URL(finding["matched-at"])
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
             except Exception as e:
