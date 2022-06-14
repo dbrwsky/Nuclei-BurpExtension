@@ -25,9 +25,9 @@ Nuclei templates with the network tag should be disabled for the extension to wo
 
 If you have Burp Professional then the nuclei findings will be added to the issue tab.
 
-![issuesPro](img/issuesPro.png "issuesPro")
+![issuesPro](img/issuesPro.PNG "issuesPro")
 
 The results are also available in the extension tab.
 
-![resultsCommunity](img/resultsCommunity.png "resultsCommunity")
+![resultsCommunity](img/resultsCommunity.PNG "resultsCommunity")
 
