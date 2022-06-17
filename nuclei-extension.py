@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     print (e)
     
-VERSION = '0.2'
+VERSION = '0.3'
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -58,9 +58,12 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         return "Nuclei"
 
     def getUiComponent(self):
-        self.cfgNucleiPath = str(self._callbacks.loadExtensionSetting("nucleiPath"))
-        self.cfgTemplatesPath = str(self._callbacks.loadExtensionSetting("templatesPath"))
-        self.cfgCustomArgs = str(self._callbacks.loadExtensionSetting("customArgs"))
+        if self._callbacks.loadExtensionSetting("nucleiPath"):
+            self.cfgNucleiPath = str(self._callbacks.loadExtensionSetting("nucleiPath"))
+        if self._callbacks.loadExtensionSetting("templatesPath"):
+            self.cfgTemplatesPath = str(self._callbacks.loadExtensionSetting("templatesPath"))
+        if self._callbacks.loadExtensionSetting("customArgs"):    
+            self.cfgCustomArgs = str(self._callbacks.loadExtensionSetting("customArgs"))
         
         self.mainPanel = JPanel(BorderLayout(5,5))
         self.mainPanel.setBorder(EmptyBorder(20, 20, 20, 20))
