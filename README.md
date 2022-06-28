@@ -31,7 +31,3 @@ The results are also available in the extension tab.
 
 ![resultsCommunity](img/resultsCommunity.PNG "resultsCommunity")
 
-# TO DO
-
-- [ ] Ability to save extension config
-

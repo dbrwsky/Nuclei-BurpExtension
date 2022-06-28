@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     print (e)
     
-VERSION = '0.1a'
+VERSION = '0.3'
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -32,6 +32,38 @@ sys.setdefaultencoding('utf-8')
 class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
     
     def __init__(self):
+        self.cfgNucleiPath = ''
+        self.cfgTemplatesPath = ''
+        self.cfgCustomArgs = ''
+        self.tabNo = 0
+
+
+    def registerExtenderCallbacks(self, callbacks):
+        print("Loading...")
+        self._helpers = callbacks.getHelpers()
+        self._callbacks = callbacks
+        self._callbacks.setExtensionName("Nuclei")
+        self._callbacks.registerExtensionStateListener(self)       
+        
+        self.scannerMenu = ScannerMenu(self)
+        self._callbacks.registerContextMenuFactory(self.scannerMenu)
+        
+        self._callbacks.addSuiteTab(self)
+        self.isBurpPro = True if "Professional" in self._callbacks.getBurpVersion()[0] else False
+        
+        self.runningSubprocesses = set()
+        print("Extension loaded")
+
+    def getTabCaption(self):
+        return "Nuclei"
+
+    def getUiComponent(self):
+        if self._callbacks.loadExtensionSetting("nucleiPath"):
+            self.cfgNucleiPath = str(self._callbacks.loadExtensionSetting("nucleiPath"))
+        if self._callbacks.loadExtensionSetting("templatesPath"):
+            self.cfgTemplatesPath = str(self._callbacks.loadExtensionSetting("templatesPath"))
+        if self._callbacks.loadExtensionSetting("customArgs"):    
+            self.cfgCustomArgs = str(self._callbacks.loadExtensionSetting("customArgs"))
         
         self.mainPanel = JPanel(BorderLayout(5,5))
         self.mainPanel.setBorder(EmptyBorder(20, 20, 20, 20))
@@ -56,7 +88,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.nucleiPathPanel = JPanel()
         self.nucleiPathPanel.layout = BoxLayout(self.nucleiPathPanel,BoxLayout.X_AXIS)
-        self.nucleiPathField = JTextField('',30)
+        self.nucleiPathField = JTextField('' + self.cfgNucleiPath,30)
         self.nucleiPathButton = JButton('Browse...',actionPerformed=self.getFile)
         self.nucleiPathPanel.add(self.nucleiPathField)
         self.nucleiPathPanel.add(self.nucleiPathButton)
@@ -68,7 +100,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.nucleiTemplatesPathPanel = JPanel()
         self.nucleiTemplatesPathPanel.layout = BoxLayout(self.nucleiTemplatesPathPanel,BoxLayout.X_AXIS)
-        self.nucleiTemplatesPathField = JTextField('',30)
+        self.nucleiTemplatesPathField = JTextField('' + self.cfgTemplatesPath ,30)
         self.nucleiTemplatesPathButton = JButton('Browse...',actionPerformed=self.getFile)
         self.nucleiTemplatesPathPanel.add(self.nucleiTemplatesPathField)
         self.nucleiTemplatesPathPanel.add(self.nucleiTemplatesPathButton)
@@ -76,7 +108,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
         self.configPanel.add(Box.createRigidArea(Dimension(0, 10)))
         self.configPanel.add(JLabel("Custom nuclei arguments:", SwingConstants.LEFT), BorderLayout.LINE_START)
-        self.nucleiCustomArgsField = JTextField('-etags network',30) #-etags fuzz,network -duc -ni -rl 10 -c 5 -proxy http://127.0.0.1:8080
+        self.nucleiCustomArgsField = JTextField('' + self.cfgCustomArgs,30) #-etags fuzz,network -duc -ni -rl 10 -c 5 -proxy http://127.0.0.1:8080
         self.configPanel.add(self.nucleiCustomArgsField)
         self.configPanel.add(Box.createRigidArea(Dimension(0, 10)))
         
@@ -99,37 +131,19 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         for frame in self.Frames:
             if frame.getName() == "suiteFrame" and  "Burp Suite" in frame.getTitle():
                 self.parentFrame = frame
-            
-        self.tabNo = 0
-
-
-    def registerExtenderCallbacks(self, callbacks):
-        print("Loading...")
-        self._helpers = callbacks.getHelpers()
-        self._callbacks = callbacks
-        self._callbacks.setExtensionName("Nuclei")
-        self._callbacks.customizeUiComponent(self.mainPanel)
-        self._callbacks.registerExtensionStateListener(self)
         
-        self.scannerMenu = ScannerMenu(self)
-        self._callbacks.registerContextMenuFactory(self.scannerMenu)
-        
-        self._callbacks.addSuiteTab(self)
-        self.isBurpPro = True if "Professional" in self._callbacks.getBurpVersion()[0] else False
-        
-        self.runningSubprocesses = set()
-        print("Extension loaded")
-
-    def getTabCaption(self):
-        return "Nuclei"
-
-    def getUiComponent(self):
         return self.mainPanel
+    
+    def saveConfig(self):
+        self._callbacks.saveExtensionSetting("nucleiPath",str(self.nucleiPathField.text))
+        self._callbacks.saveExtensionSetting("templatesPath",str(self.nucleiTemplatesPathField.text))
+        self._callbacks.saveExtensionSetting("customArgs",str(self.nucleiCustomArgsField.text))
 
     def extensionUnloaded(self):
         for p in self.runningSubprocesses:
             p.terminate()
             self.runningSubprocesses.remove(p)
+        self.saveConfig()
         print("Extension was unloaded")
         
     def startScan(self, ev):
@@ -166,18 +180,21 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         self.scanResultsTab.add(JScrollPane(scanResultsTextPane), BorderLayout.CENTER)
         
         tabActionPanel = JPanel(FlowLayout(FlowLayout.LEADING, 10, 10))
+        
         tabActionPanel.add(JLabel("Status: ", SwingConstants.LEFT))
         scanStatusLabel = JLabel("Ready to scan", SwingConstants.LEFT)
         tabActionPanel.add(scanStatusLabel)
+        
         tabCloseButton = JButton("Close tab",actionPerformed=self.closeTab)
         tabCloseButton.setForeground(Color.RED)
         tabActionPanel.add(tabCloseButton, BorderLayout.LINE_START)
+        
         killProcessButton = JButton("Kill nuclei process",actionPerformed=self.killNuclei)
         killProcessButton.setForeground(Color.RED)
         tabActionPanel.add(killProcessButton, BorderLayout.LINE_START)
         
+
         title = '['+ str (self.tabNo) +'] ' + url
-        
         self.scanResultsTab.add(tabActionPanel, BorderLayout.PAGE_START)
         self.tabPane.addTab(title,self.scanResultsTab)
         
@@ -187,22 +204,35 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         text += "-----------------------------------------------------------<br>"
         scanResultsTextPane.setText(text)
 
+        
         parsedCmd = shlex.split(cmd, posix=True)
-        p = subprocess.Popen(parsedCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        scanStatusLabel.setText("Scan in progress")
-        
-        self.runningSubprocesses.add(p)
-        killProcessButton.putClientProperty("proc", p)
-        tabCloseButton.putClientProperty("proc", p)        
-        
-        (output, err) = p.communicate()
-        text += self.parseNucleiResults(output, httpService)
-        scanResultsTextPane.setText(text)
+        try:
+            p = subprocess.Popen(parsedCmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            
+            scanStatusLabel.setText("Scan in progress")
+            
+            self.runningSubprocesses.add(p)
 
+            killProcessButton.putClientProperty("pid", p.pid)
+            killProcessButton.putClientProperty("proc", p)
+            
+            tabCloseButton.putClientProperty("pid", p.pid)
+            tabCloseButton.putClientProperty("proc", p)
+             
+            for line in iter(p.stdout.readline, b''):
+                vuln = line.rstrip()
+                text += self.parseNucleiResults(vuln, httpService)
+                scanResultsTextPane.setText(text)
+
+            scanStatusLabel.setText("Scan completed")
+            self.runningSubprocesses.remove(p)
+            
+        except Exception as e:
+            text += "<p style=\"color:red\"><b> EXCEPTION OCCURED: " + str(e) + "</b></p>"
+            scanStatusLabel.setText("ERROR")
+            scanResultsTextPane.setText(text)
+        
         killProcessButton.setEnabled(False)
-        scanStatusLabel.setText("Scan completed")
-        self.runningSubprocesses.remove(p)
 
     
     def parseNucleiResults(self, results, httpService):
@@ -212,31 +242,32 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
             try:
                 finding = json.loads(issue)
                 findingName = "[Nuclei] " + finding["info"]["name"]
+                findingDesc = "<b>Template ID:</b> " + finding["template-id"] + "<br>"
                 if "matcher-name" in finding:
                     findingName += " : " + finding["matcher-name"]
-                findingDesc = finding["matched-at"] + "<br>"
+                findingDesc += "<b>Matched-at:</b> "+ finding["matched-at"] + "<br>"
                 if "extracted-results" in finding:
                     for item in finding["extracted-results"]:
                         findingName += ": " + item
-                        findingDesc += "Extracted data: " + item + "<br>"
+                        findingDesc += "<b>Extracted data:</b> " + item + "<br>"
                 if "description" in finding["info"]:
-                    findingDesc += finding["info"]["description"] + "<br>"
+                    findingDesc += "<b>Description:</b> <br>" + finding["info"]["description"] + "<br>"
+                if finding["info"]["reference"]:
+                    findingDesc += "<b>References:</b><br> "
+                    for item in finding["info"]["reference"]:
+                        findingDesc += item + "<br>"  
                 if "curl-command" in finding:
-                    findingDesc += finding["curl-command"] 
-                findingURL = URL(finding["matched-at"])
+                    findingDesc += "<br><b>CURL:</b><br>" + finding["curl-command"]
                 findingSeverity = "Information"
-                if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower == "critical":
+                if (finding["info"]["severity"]).lower() == "high" or (finding["info"]["severity"]).lower() == "critical":
                     findingSeverity = "High"
                 elif (finding["info"]["severity"]).lower() == "medium":
                     findingSeverity = "Medium"
                 elif (finding["info"]["severity"]).lower() == "low" :
                     findingSeverity = "Low"
-                if "request" in finding:
-                    findingReq = finding["request"]
-                if "response" in finding:
-                    findingResp = finding["response"]
-                text += '<b>[' + findingSeverity + '] ' + findingName + '<br>Description:</b><br> ' + findingDesc + '<br>-----------<br>'
-                if self.isBurpPro:
+                text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
+                if self.isBurpPro and finding["type"] == "http":
+                    findingURL = URL(finding["matched-at"])
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
             except Exception as e:
@@ -255,11 +286,13 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         
 
     def closeTab(self, button):
+        pid = button.getSource().getClientProperty("pid")
         proc = button.getSource().getClientProperty("proc")
-        poll = proc.poll()
-        if poll is None:
-            proc.terminate()
-        
+        if proc and pid:
+            poll = proc.poll()
+            if poll is None:
+                proc.terminate()
+                
         tabid = self.tabPane.getSelectedIndex()
         self.tabPane.removeTabAt(tabid)
         if self.tabPane.getTabCount() == 1:
@@ -272,21 +305,22 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 
     def getFile(self, button):
         chooser = JFileChooser()
-        if chooser is not None:
-            if button.getSource() == self.nucleiPathButton:
-                chooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
-                chooser.showOpenDialog(self.parentFrame)
+        if button.getSource() == self.nucleiPathButton:
+            chooser.setFileSelectionMode(JFileChooser.FILES_ONLY)
+            returnVal = chooser.showOpenDialog(self.parentFrame)
+            if returnVal != chooser.CANCEL_OPTION:
                 if (chooser.currentDirectory and chooser.selectedFile.name) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
                     self.nucleiPathField.setText(self._fileLocation)
-            if button.getSource() == self.nucleiTemplatesPathButton:
-                chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES)
-                chooser.showOpenDialog(self.parentFrame)
+                    self.saveConfig()
+        if button.getSource() == self.nucleiTemplatesPathButton:
+            chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES)
+            returnVal = chooser.showOpenDialog(self.parentFrame)
+            if returnVal != chooser.CANCEL_OPTION:
                 if (chooser.currentDirectory) is not None:
                     self._fileLocation = chooser.getCurrentDirectory().toString() + os.sep + chooser.getSelectedFile().getName()
-                    self.nucleiTemplatesPathField.setText(self._fileLocation)    
-        else:
-            self.nucleiPathField.setText("File Not Valid, Try Again")
+                    self.nucleiTemplatesPathField.setText(self._fileLocation)
+                    self.saveConfig()  
                 
 class ScannerMenu(IContextMenuFactory):
     def __init__(self, scannerInstance):
