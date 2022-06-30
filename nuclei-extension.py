@@ -266,7 +266,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 elif (finding["info"]["severity"]).lower() == "low" :
                     findingSeverity = "Low"
                 text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
-                if self.isBurpPro and finding["type"] == "http":
+                if self.isBurpPro and (finding["type"] == "http" or finding["type"] == "headless"):
                     findingURL = URL(finding["matched-at"])
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
