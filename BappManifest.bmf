@@ -3,11 +3,11 @@ ExtensionType: 2
 Name: Nuclei Burp Integration
 RepoName: nuclei-burp-integration
 ScreenVersion: 0.3
-SerialVersion: 2
+SerialVersion: 3
 MinPlatformVersion: 0
-ProOnly: True
+ProOnly: False
 Author: Dbrwsky
 ShortDescription: Allows you to run Nuclei Scanner directly from Burp and transforms JSON results into the issues.
 EntryPoint: nuclei-extension.py
 BuildCommand: 
-SupportedProducts: Pro
+SupportedProducts: Pro, Community
