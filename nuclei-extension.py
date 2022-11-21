@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     print (e)
     
-VERSION = '0.3'
+VERSION = '0.4'
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -359,6 +359,7 @@ class CustomScanIssue(IScanIssue):
         self._detail = detail
         self._severity = severity
         self._confidence = confidence
+        self._httpMessages = [] # Dummy array to fix issue with adding custom scan issue
 
     def getUrl(self):
         return self._url
@@ -388,7 +389,7 @@ class CustomScanIssue(IScanIssue):
         pass
 
     def getHttpMessages(self):
-        pass
+        return self._httpMessages
 
     def getHttpService(self):
         return self._httpService
