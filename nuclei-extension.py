@@ -24,7 +24,7 @@ try:
 except ImportError as e:
     print (e)
     
-VERSION = '0.3'
+VERSION = '0.4'
 
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -266,7 +266,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
                 elif (finding["info"]["severity"]).lower() == "low" :
                     findingSeverity = "Low"
                 text += '<b>[' + findingSeverity + '] ' + findingName + '<br><br></b>' + findingDesc + '<br>-----------<br>'
-                if self.isBurpPro and finding["type"] == "http":
+                if self.isBurpPro and (finding["type"] == "http" or finding["type"] == "headless"):
                     findingURL = URL(finding["matched-at"])
                     customIssue = CustomScanIssue(httpService, findingURL, findingName, findingDesc, findingSeverity)
                     self._callbacks.addScanIssue(customIssue)
@@ -359,6 +359,7 @@ class CustomScanIssue(IScanIssue):
         self._detail = detail
         self._severity = severity
         self._confidence = confidence
+        self._httpMessages = [] # Dummy array to fix issue with adding custom scan issue
 
     def getUrl(self):
         return self._url
@@ -388,7 +389,7 @@ class CustomScanIssue(IScanIssue):
         pass
 
     def getHttpMessages(self):
-        pass
+        return self._httpMessages
 
     def getHttpService(self):
         return self._httpService
