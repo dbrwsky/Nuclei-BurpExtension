@@ -2,8 +2,8 @@ Uuid: 9c7f7ae2844c4828b28be2398c02b7f7
 ExtensionType: 2
 Name: Nuclei Burp Integration
 RepoName: nuclei-burp-integration
-ScreenVersion: 0.3
-SerialVersion: 3
+ScreenVersion: 0.4
+SerialVersion: 4
 MinPlatformVersion: 0
 ProOnly: False
 Author: Dbrwsky
