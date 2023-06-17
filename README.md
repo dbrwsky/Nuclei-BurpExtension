@@ -1,6 +1,6 @@
 # Nuclei - Burp Extension 
 
-Simple extension that allows to run nuclei scanner directly from burp and transforms json results into the issues.
+Simple extension that allows to run nuclei scanner directly from burp and transforms json results into the issues.  
 ⚠️ Works with nuclei version => v2.9.1.
 
 # Installation
