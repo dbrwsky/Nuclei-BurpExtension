@@ -82,7 +82,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
 
         
         self.configPanel.add(Box.createRigidArea(Dimension(0, 10)))
-        self.labelTest = JLabel("Path to nuclei binary:")
+        self.labelTest = JLabel("Path to nuclei binary >= v2.9.1:")
         self.labelTest.setAlignmentX(Component.LEFT_ALIGNMENT)
         self.configPanel.add(self.labelTest)
         
