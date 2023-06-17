@@ -198,7 +198,7 @@ class BurpExtender(IBurpExtender, ITab, IScanIssue, IExtensionStateListener):
         self.scanResultsTab.add(tabActionPanel, BorderLayout.PAGE_START)
         self.tabPane.addTab(title,self.scanResultsTab)
         
-        cmd = "'" + self.nucleiPathField.text + "' -u " + url + " -t '" + self.nucleiTemplatesPathField.text + "' -json -nc " + self.nucleiCustomArgsField.text
+        cmd = "'" + self.nucleiPathField.text + "' -u " + url + " -t '" + self.nucleiTemplatesPathField.text + "' -j -nc " + self.nucleiCustomArgsField.text
         
         text += "Scanning of " + url + " started<br>" + cmd + "<br>"
         text += "-----------------------------------------------------------<br>"
